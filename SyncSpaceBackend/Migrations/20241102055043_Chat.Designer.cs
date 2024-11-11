@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebAPI.Context;
 
@@ -10,9 +11,11 @@ using WebAPI.Context;
 namespace SyncSpaceBackend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241102055043_Chat")]
+    partial class Chat
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -70,7 +73,11 @@ namespace SyncSpaceBackend.Migrations
                     b.Property<int>("ProjectGroupId")
                         .HasColumnType("int");
 
-                    b.Property<int>("SenderId")
+                    b.Property<string>("SenderId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("SenderId1")
                         .HasColumnType("int");
 
                     b.Property<string>("SenderName")
@@ -86,7 +93,7 @@ namespace SyncSpaceBackend.Migrations
 
                     b.HasIndex("ProjectGroupId");
 
-                    b.HasIndex("SenderId");
+                    b.HasIndex("SenderId1");
 
                     b.ToTable("ChatMessages");
                 });
@@ -235,7 +242,7 @@ namespace SyncSpaceBackend.Migrations
 
                     b.HasOne("WebAPI.Models.User", "Sender")
                         .WithMany()
-                        .HasForeignKey("SenderId")
+                        .HasForeignKey("SenderId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
