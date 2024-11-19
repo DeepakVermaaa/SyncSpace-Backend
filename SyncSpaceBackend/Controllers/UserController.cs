@@ -10,6 +10,9 @@ using System.Text;
 using System;
 using Google.Apis.Auth;
 using SyncSpaceBackend.Models;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 
 namespace SyncSpaceBackend.Controllers
 {
@@ -19,11 +22,13 @@ namespace SyncSpaceBackend.Controllers
     {
         private readonly AppDbContext _authContext;
         private readonly IConfiguration _configuration;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public UserController(AppDbContext appDbcontext, IConfiguration configuration)
+        public UserController(AppDbContext appDbcontext, IConfiguration configuration, IWebHostEnvironment webHostEnvironment)
         {
             _authContext = appDbcontext;
             _configuration = configuration;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         [HttpPost("authenticate")]
@@ -52,7 +57,10 @@ namespace SyncSpaceBackend.Controllers
                     user.FirstName,
                     user.LastName,
                     user.Email,
-                    user.Role
+                    user.Role,
+                    user.ProfilePicture,
+                    user.CreatedAt,
+                    user.UpdatedAt
                 },
                 Message = "Login successful"
             });
@@ -61,25 +69,27 @@ namespace SyncSpaceBackend.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> RegisterUser([FromBody] User userObj)
         {
-            if (userObj == null)
-                return BadRequest(new { Message = "Invalid user data" });
+                if (userObj == null)
+                    return BadRequest(new { Message = "Invalid user data" });
 
-            // Check if user already exists
-            if (await _authContext.Users.AnyAsync(x => x.Username == userObj.Username))
-                return BadRequest(new { Message = "Username already exists" });
+                // Check if user already exists
+                if (await _authContext.Users.AnyAsync(x => x.Username == userObj.Username))
+                    return BadRequest(new { Message = "Username already exists" });
 
-            // Check if email already exists
-            if (await _authContext.Users.AnyAsync(x => x.Email == userObj.Email))
-                return BadRequest(new { Message = "Email already exists" });
+                // Check if email already exists
+                if (await _authContext.Users.AnyAsync(x => x.Email == userObj.Email))
+                    return BadRequest(new { Message = "Email already exists" });
 
-            // Hash password
-            userObj.Password = PasswordHasher.HashPassword(userObj.Password);
-            userObj.Role = "User";
+                // Hash password
+                userObj.Password = PasswordHasher.HashPassword(userObj.Password);
+                userObj.Role = "User";
 
-            await _authContext.Users.AddAsync(userObj);
-            await _authContext.SaveChangesAsync();
+                userObj.CreatedAt = DateTime.Now;
 
-            return Ok(new { Message = "Registration successful" });
+                await _authContext.Users.AddAsync(userObj);
+                await _authContext.SaveChangesAsync();
+
+                return Ok(new { Message = "Registration successful" });
         }
 
         [HttpPost("google-authenticate")]
@@ -105,7 +115,8 @@ namespace SyncSpaceBackend.Controllers
                             Username = payload.Email,
                             FirstName = payload.GivenName,
                             LastName = payload.FamilyName,
-                            Role = "User"
+                            Role = "User",
+                            CreatedAt = DateTime.Now
                         };
                         await _authContext.Users.AddAsync(user);
                         await _authContext.SaveChangesAsync();
@@ -133,7 +144,8 @@ namespace SyncSpaceBackend.Controllers
                         user.FirstName,
                         user.LastName,
                         user.Email,
-                        user.Role
+                        user.Role,
+                        user.ProfilePicture
                     },
                     Message = request.IsSignUp ? "Google sign-up successful" : "Google login successful"
                 });
@@ -141,6 +153,82 @@ namespace SyncSpaceBackend.Controllers
             catch (InvalidJwtException ex)
             {
                 return BadRequest(new { Message = "Invalid Google token" });
+            }
+        }
+
+        [HttpPut("update-profile")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileRequest request)
+        {
+            try
+            {
+                var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userId = Convert.ToInt32(userIdString);
+                var user = await _authContext.Users.FindAsync(userId);
+
+                if (user == null)
+                    return NotFound(new { Message = "User not found" });
+
+                // Verify current password
+                if (!PasswordHasher.VerifyPassword(request.CurrentPassword, user.Password))
+                    return BadRequest(new { Message = "Current password is incorrect" });
+
+                // Update basic info
+                user.FirstName = request.FirstName ?? user.FirstName;
+                user.LastName = request.LastName ?? user.LastName;
+                user.Email = request.Email ?? user.Email;
+                user.Username = request.Username ?? user.Username;
+
+                // Update timestamp
+                user.UpdatedAt = DateTime.UtcNow;
+
+                // Update password if provided
+                if (!string.IsNullOrEmpty(request.NewPassword))
+                {
+                    user.Password = PasswordHasher.HashPassword(request.NewPassword);
+                }
+
+                // Handle profile picture upload if provided
+                if (request.ProfilePicture != null)
+                {
+                    var fileName = $"{Guid.NewGuid()}{Path.GetExtension(request.ProfilePicture.FileName)}";
+                    var filePath = Path.Combine(_webHostEnvironment.ContentRootPath, "uploads", "profiles", fileName);
+
+                    // Ensure the profiles folder exists
+                    var directoryPath = Path.GetDirectoryName(filePath);
+                    if (!Directory.Exists(directoryPath))
+                    {
+                        Directory.CreateDirectory(directoryPath);
+                    }
+
+                    // Save the file
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await request.ProfilePicture.CopyToAsync(stream);
+                    }
+
+                    // Update the profile picture path
+                    user.ProfilePicture = $"/uploads/profiles/{fileName}";
+                }
+
+                await _authContext.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    user.Id,
+                    user.Username,
+                    user.FirstName,
+                    user.LastName,
+                    user.Email,
+                    user.Role,
+                    user.ProfilePicture,
+                    user.CreatedAt,
+                    user.UpdatedAt
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while updating the profile", Error = ex.Message });
             }
         }
 
@@ -153,7 +241,7 @@ namespace SyncSpaceBackend.Controllers
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Role, user.Role),
                 new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}")
-                
+
             });
 
             var credentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256);

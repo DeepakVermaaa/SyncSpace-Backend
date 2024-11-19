@@ -28,7 +28,7 @@ namespace SyncSpaceBackend.Interfaces
         /// <param name="userId">The ID of the user whose access is to be validated.</param>
         /// <param name="projectGroupId">The ID of the project group to check access for.</param>
         /// <returns>The task result indicates whether the user has access (true) or not (false).</returns>
-        Task<bool> ValidateUserProjectAccessAsync(string userId, int projectGroupId);
+        Task<bool> ValidateUserProjectAccessAsync(int userId, int projectGroupId);
 
         /// <summary>
         /// Deletes a chat message if the user is authorized to do so.
@@ -43,6 +43,6 @@ namespace SyncSpaceBackend.Interfaces
         /// </summary>
         /// <param name="userId">The ID of the user for whom to retrieve chat rooms.</param>
         /// <returns>The task result contains a collection of chat rooms.</returns>
-        Task<IEnumerable<ChatRoom>> GetUserChatRoomsAsync(string userId);
+        Task<IEnumerable<ChatRoom>> GetUserChatRoomsAsync(int userId);
     }
 }

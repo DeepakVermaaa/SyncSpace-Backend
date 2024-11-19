@@ -1,5 +1,6 @@
 ﻿using SyncSpaceBackend.Enums;
 using WebAPI.Models;
+using static SyncSpaceBackend.Enums.Enum;
 
 namespace SyncSpaceBackend.Models
 {
@@ -7,7 +8,7 @@ namespace SyncSpaceBackend.Models
     {
         public int Id { get; set; }
         public int ProjectId { get; set; }
-        public string UserId { get; set; }
+        public int UserId { get; set; }
         public ProjectRole Role { get; set; }
         public DateTime JoinedAt { get; set; }
 

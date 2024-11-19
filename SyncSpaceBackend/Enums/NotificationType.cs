@@ -5,5 +5,6 @@
     ProjectDeadline,
     Mention,
     TeamUpdate,
+    ProjectUpdate,
     System
 }

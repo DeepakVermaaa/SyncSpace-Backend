@@ -31,8 +31,9 @@ namespace SyncSpaceBackend.Controllers
         [HttpGet("rooms")]
         public async Task<ActionResult<IEnumerable<ChatRoom>>> GetUserChatRooms()
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = Convert.ToInt32(userIdString);
+            if (string.IsNullOrEmpty(userIdString))
             {
                 return Unauthorized();
             }
@@ -55,8 +56,9 @@ namespace SyncSpaceBackend.Controllers
             int projectGroupId,
             [FromQuery] int? limit)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = Convert.ToInt32(userIdString);
+            if (string.IsNullOrEmpty(userIdString))
             {
                 return Unauthorized();
             }

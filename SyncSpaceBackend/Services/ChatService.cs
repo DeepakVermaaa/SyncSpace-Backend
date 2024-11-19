@@ -59,8 +59,9 @@ namespace SyncSpaceBackend.Services
         /// <param name="userId">The ID of the user whose access is to be validated.</param>
         /// <param name="projectGroupId">The ID of the project group to check access for.</param>
         /// <returns>The task result indicates whether the user has access (true) or not (false).</returns>
-        public async Task<bool> ValidateUserProjectAccessAsync(string userId, int projectGroupId)
+        public async Task<bool> ValidateUserProjectAccessAsync(int userId, int projectGroupId)
         {
+            
             return await _context.ProjectMembers
                 .AnyAsync(pm => pm.UserId == userId && pm.ProjectId == projectGroupId);
         }
@@ -88,7 +89,7 @@ namespace SyncSpaceBackend.Services
         /// </summary>
         /// <param name="userId">The ID of the user for whom to retrieve chat rooms.</param>
         /// <returns>The task result contains a collection of chat rooms.</returns>
-        public async Task<IEnumerable<ChatRoom>> GetUserChatRoomsAsync(string userId)
+        public async Task<IEnumerable<ChatRoom>> GetUserChatRoomsAsync(int userId)
         {
             return await _context.ChatRooms
                 .Where(cr => cr.ProjectGroup.ProjectMembers

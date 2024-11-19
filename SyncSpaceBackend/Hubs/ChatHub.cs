@@ -34,8 +34,8 @@ namespace SyncSpaceBackend.Hubs
 
         public async Task JoinGroup(int projectGroupId)
         {
-            var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
+            var userIdString = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = Convert.ToInt32(userIdString);
             if (await _chatService.ValidateUserProjectAccessAsync(userId, projectGroupId))
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, projectGroupId.ToString());
@@ -56,7 +56,7 @@ namespace SyncSpaceBackend.Hubs
             var userIdString = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var userId = Convert.ToInt32(userIdString);
 
-            if (await _chatService.ValidateUserProjectAccessAsync(userIdString, projectGroupId))
+            if (await _chatService.ValidateUserProjectAccessAsync(userId, projectGroupId))
             {
                 var chatMessage = new ChatMessage
                 {
