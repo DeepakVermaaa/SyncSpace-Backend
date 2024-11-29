@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebAPI.Context;
 
@@ -10,9 +11,11 @@ using WebAPI.Context;
 namespace SyncSpaceBackend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241123071611_ProjectGroupChanges")]
+    partial class ProjectGroupChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -114,44 +117,6 @@ namespace SyncSpaceBackend.Migrations
                     b.ToTable("ChatRooms");
                 });
 
-            modelBuilder.Entity("SyncSpaceBackend.Models.Organizations", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<string>("Domain")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Domain")
-                        .IsUnique();
-
-                    b.HasIndex("Name");
-
-                    b.ToTable("Organizations");
-                });
-
             modelBuilder.Entity("SyncSpaceBackend.Models.ProjectGroup", b =>
                 {
                     b.Property<int>("Id")
@@ -182,9 +147,6 @@ namespace SyncSpaceBackend.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
-                    b.Property<int>("OrganizationId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime(6)");
 
@@ -202,12 +164,7 @@ namespace SyncSpaceBackend.Migrations
 
                     b.HasIndex("Name");
 
-                    b.HasIndex("OrganizationId");
-
                     b.HasIndex("Status");
-
-                    b.HasIndex("OrganizationId", "Name")
-                        .IsUnique();
 
                     b.ToTable("ProjectGroups");
                 });
@@ -424,9 +381,6 @@ namespace SyncSpaceBackend.Migrations
                     b.Property<string>("LastName")
                         .HasColumnType("longtext");
 
-                    b.Property<int?>("OrganizationId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Password")
                         .HasColumnType("longtext");
 
@@ -446,8 +400,6 @@ namespace SyncSpaceBackend.Migrations
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("OrganizationId");
 
                     b.ToTable("users", (string)null);
                 });
@@ -505,15 +457,7 @@ namespace SyncSpaceBackend.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("SyncSpaceBackend.Models.Organizations", "Organizations")
-                        .WithMany("Projects")
-                        .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("CreatedBy");
-
-                    b.Navigation("Organizations");
                 });
 
             modelBuilder.Entity("SyncSpaceBackend.Models.ProjectMember", b =>
@@ -619,26 +563,9 @@ namespace SyncSpaceBackend.Migrations
                     b.Navigation("Task");
                 });
 
-            modelBuilder.Entity("WebAPI.Models.User", b =>
-                {
-                    b.HasOne("SyncSpaceBackend.Models.Organizations", "Organizations")
-                        .WithMany("Users")
-                        .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Organizations");
-                });
-
             modelBuilder.Entity("SyncSpaceBackend.Models.ChatRoom", b =>
                 {
                     b.Navigation("Messages");
-                });
-
-            modelBuilder.Entity("SyncSpaceBackend.Models.Organizations", b =>
-                {
-                    b.Navigation("Projects");
-
-                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("SyncSpaceBackend.Models.ProjectGroup", b =>

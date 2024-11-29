@@ -1,8 +1,11 @@
-﻿namespace WebAPI.Models
+﻿using SyncSpaceBackend.Models;
+
+namespace WebAPI.Models
 {
     public class User
     {
         public int Id { get; set; }
+        public int? OrganizationId { get; set; }
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
         public string? Email { get; set; }
@@ -13,5 +16,7 @@
         public string? ProfilePicture { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+
+        public virtual Organizations? Organizations { get; set; }
     }
 }

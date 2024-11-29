@@ -44,5 +44,8 @@ namespace SyncSpaceBackend.Interfaces
         /// <param name="userId">The ID of the user for whom to retrieve chat rooms.</param>
         /// <returns>The task result contains a collection of chat rooms.</returns>
         Task<IEnumerable<ChatRoom>> GetUserChatRoomsAsync(int userId);
+        Task<bool> ValidateUserCanCreateChatRoomAsync(int userId, int projectGroupId);
+
+        Task<ChatRoom> CreateChatRoomAsync(int projectGroupId, string name);
     }
 }

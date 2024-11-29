@@ -232,6 +232,61 @@ namespace SyncSpaceBackend.Controllers
             }
         }
 
+        [HttpGet("search")]
+        [Authorize]
+        public async Task<IActionResult> SearchUsers([FromQuery] string searchTerm, [FromQuery] int projectId)
+        {
+            try
+            {
+                // Get current user's ID and organization
+                var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userId = Convert.ToInt32(userIdString);
+
+                var currentUser = await _authContext.Users
+                    .Include(u => u.Organizations)
+                    .FirstOrDefaultAsync(u => u.Id == userId);
+
+                if (currentUser == null || currentUser.Organizations == null)
+                    return BadRequest(new { Message = "User or organization not found" });
+
+                // Get existing project members to exclude them
+                var existingMemberIds = await _authContext.ProjectMembers
+                    .Where(pm => pm.ProjectId == projectId)
+                    .Select(pm => pm.UserId)
+                    .ToListAsync();
+
+                // Search for users in the same organization
+                var users = await _authContext.Users
+                    .Where(u =>
+                        // Same organization
+                        u.OrganizationId == currentUser.OrganizationId &&
+                        // Not already a member
+                        !existingMemberIds.Contains(u.Id) &&
+                        (u.FirstName.Contains(searchTerm) ||
+                         u.LastName.Contains(searchTerm) ||
+                         u.Email.Contains(searchTerm) ||
+                         (u.FirstName + " " + u.LastName).Contains(searchTerm))
+                    )
+                    .Take(10) // Limit results for performance
+                    .Select(u => new
+                    {
+                        u.Id,
+                        u.FirstName,
+                        u.LastName,
+                        u.Email,
+                        DisplayName = $"{u.FirstName} {u.LastName}",
+                        u.ProfilePicture
+                    })
+                    .ToListAsync();
+
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while searching users", Error = ex.Message });
+            }
+        }
+
         private string CreateJwt(User user)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();

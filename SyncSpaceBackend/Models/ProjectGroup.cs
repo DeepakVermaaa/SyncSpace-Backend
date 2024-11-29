@@ -12,7 +12,7 @@ namespace SyncSpaceBackend.Models
         public int CreatedById { get; set; }
         public bool IsActive { get; set; }
         public DateTime? StartDate { get; set; }
-
+        public int OrganizationId { get; set; }
         public DateTime? EndDate { get; set; }
 
         public ProjectStatus Status { get; set; } = ProjectStatus.Active;
@@ -23,7 +23,7 @@ namespace SyncSpaceBackend.Models
         public virtual ICollection<ChatRoom> ChatRooms { get; set; }
         public virtual ICollection<ChatMessage> ChatMessages { get; set; }
         public virtual ICollection<ProjectTask> Tasks { get; set; }
-
+        public virtual Organizations Organizations { get; set; }
         public virtual ICollection<ProjectMilestone> Milestones { get; set; }
     }
 

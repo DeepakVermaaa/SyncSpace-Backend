@@ -29,6 +29,12 @@ namespace WebAPI.Context
             builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
             builder.Entity<User>().ToTable("users");
 
+            builder.Entity<User>()
+           .HasOne(u => u.Organizations)
+           .WithMany()
+           .HasForeignKey(u => u.OrganizationId)
+           .IsRequired(false);
+
             builder.Entity<Notification>()
                 .HasOne(n => n.User)
                 .WithMany()
@@ -41,6 +47,7 @@ namespace WebAPI.Context
             builder.ApplyConfiguration(new TaskCommentConfiguration());
             builder.ApplyConfiguration(new TaskAttachmentConfiguration());
             builder.ApplyConfiguration(new ProjectMilestoneConfiguration());
+            builder.ApplyConfiguration(new OrganizationConfiguration());
         }
     }
 }

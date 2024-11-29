@@ -2,6 +2,7 @@
 using SyncSpaceBackend.Interfaces;
 using SyncSpaceBackend.Models;
 using WebAPI.Context;
+using static SyncSpaceBackend.Enums.Enum;
 
 namespace SyncSpaceBackend.Services
 {
@@ -61,7 +62,7 @@ namespace SyncSpaceBackend.Services
         /// <returns>The task result indicates whether the user has access (true) or not (false).</returns>
         public async Task<bool> ValidateUserProjectAccessAsync(int userId, int projectGroupId)
         {
-            
+
             return await _context.ProjectMembers
                 .AnyAsync(pm => pm.UserId == userId && pm.ProjectId == projectGroupId);
         }
@@ -96,6 +97,29 @@ namespace SyncSpaceBackend.Services
                     .Any(pm => pm.UserId == userId))
                 .Include(cr => cr.ProjectGroup)
                 .ToListAsync();
+        }
+
+        public async Task<bool> ValidateUserCanCreateChatRoomAsync(int userId, int projectGroupId)
+        {
+            var member = await _context.ProjectMembers
+                .FirstOrDefaultAsync(m => m.ProjectId == projectGroupId && m.UserId == userId);
+
+            return member?.Role == ProjectRole.Admin || member?.Role == ProjectRole.Manager;
+        }
+
+        public async Task<ChatRoom> CreateChatRoomAsync(int projectGroupId, string name)
+        {
+            var chatRoom = new ChatRoom
+            {
+                ProjectGroupId = projectGroupId,
+                Name = name,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.ChatRooms.Add(chatRoom);
+            await _context.SaveChangesAsync();
+
+            return chatRoom;
         }
     }
 

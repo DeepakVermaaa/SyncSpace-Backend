@@ -104,5 +104,36 @@ namespace SyncSpaceBackend.Controllers
                 return StatusCode(500, "An error occurred while deleting the message");
             }
         }
+
+        [HttpPost("rooms")]
+        public async Task<ActionResult<ChatRoomDto>> CreateChatRoom([FromBody] CreateChatRoomDto dto)
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = Convert.ToInt32(userIdString);
+
+            if (string.IsNullOrEmpty(userIdString))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                // Check if user has permission to create chat room
+                var hasPermission = await _chatService.ValidateUserCanCreateChatRoomAsync(userId, dto.ProjectGroupId);
+                if (!hasPermission)
+                {
+                    return Forbid();
+                }
+
+                var chatRoom = await _chatService.CreateChatRoomAsync(dto.ProjectGroupId, dto.Name);
+                var chatRoomDto = _mapper.Map<ChatRoomDto>(chatRoom);
+                return Ok(chatRoomDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating chat room for project {ProjectGroupId}", dto.ProjectGroupId);
+                return StatusCode(500, "An error occurred while creating the chat room");
+            }
+        }
     }
 }

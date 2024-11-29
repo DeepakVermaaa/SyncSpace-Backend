@@ -9,16 +9,24 @@ namespace SyncSpaceBackend.EntityConfiguration
     {
         public void Configure(EntityTypeBuilder<ProjectGroup> builder)
         {
+            // Primary Key
             builder.HasKey(pg => pg.Id);
 
+            // Required Properties
             builder.Property(pg => pg.Name)
                 .IsRequired()
                 .HasMaxLength(100);
 
             builder.Property(pg => pg.Description)
-                .HasMaxLength(1000); 
+                .HasMaxLength(1000);
 
             builder.Property(pg => pg.CreatedAt)
+                .IsRequired();
+
+            builder.Property(pg => pg.CreatedById)
+                .IsRequired();
+
+            builder.Property(pg => pg.OrganizationId)
                 .IsRequired();
 
             builder.Property(pg => pg.IsActive)
@@ -27,19 +35,27 @@ namespace SyncSpaceBackend.EntityConfiguration
 
             builder.Property(pg => pg.Status)
                 .IsRequired()
-                .HasConversion<string>() 
+                .HasConversion<string>()
                 .HasDefaultValue(ProjectStatus.Planning);
 
+            // Optional Properties
             builder.Property(pg => pg.StartDate)
-                .IsRequired(false); 
+                .IsRequired(false);
 
             builder.Property(pg => pg.EndDate)
-                .IsRequired(false);  
+                .IsRequired(false);
 
             // Indexes
             builder.HasIndex(pg => pg.Name);
             builder.HasIndex(pg => pg.CreatedAt);
             builder.HasIndex(pg => pg.Status);
+            builder.HasIndex(pg => pg.OrganizationId); // Add index for organization lookups
+
+            // Relationships
+            builder.HasOne(pg => pg.Organizations)
+                .WithMany(o => o.Projects)
+                .HasForeignKey(pg => pg.OrganizationId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(pg => pg.CreatedBy)
                 .WithMany()
@@ -71,7 +87,12 @@ namespace SyncSpaceBackend.EntityConfiguration
                 .HasForeignKey(m => m.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Global Query Filter
             builder.HasQueryFilter(pg => pg.IsActive);
+
+            // Add composite index for organization and name uniqueness
+            builder.HasIndex(pg => new { pg.OrganizationId, pg.Name })
+                .IsUnique();
         }
     }
 }
