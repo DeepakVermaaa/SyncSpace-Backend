@@ -90,11 +90,18 @@ namespace SyncSpaceBackend.Services
         /// </summary>
         /// <param name="userId">The ID of the user for whom to retrieve chat rooms.</param>
         /// <returns>The task result contains a collection of chat rooms.</returns>
-        public async Task<IEnumerable<ChatRoom>> GetUserChatRoomsAsync(int userId)
+        public async Task<IEnumerable<ChatRoom>> GetUserChatRoomsAsync(int userId, int? projectId = null)
         {
-            return await _context.ChatRooms
+            var query = _context.ChatRooms
                 .Where(cr => cr.ProjectGroup.ProjectMembers
-                    .Any(pm => pm.UserId == userId))
+                    .Any(pm => pm.UserId == userId));
+
+            if (projectId.HasValue)
+            {
+                query = query.Where(cr => cr.ProjectGroupId == projectId.Value);
+            }
+
+            return await query
                 .Include(cr => cr.ProjectGroup)
                 .ToListAsync();
         }

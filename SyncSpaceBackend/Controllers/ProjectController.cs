@@ -936,7 +936,7 @@ namespace SyncSpaceBackend.Controllers
                 _logger.LogError(ex, $"Error deleting milestone {id}");
                 return StatusCode(500, new { Message = "An error occurred while delAddeting the milestone" });
             }
-        
+
         }
     }
 }

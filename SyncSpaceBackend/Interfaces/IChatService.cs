@@ -38,12 +38,15 @@ namespace SyncSpaceBackend.Interfaces
         /// <returns></returns>
         Task DeleteMessageAsync(int messageId, int userId);
 
+        // In IChatService interface
         /// <summary>
-        /// Retrieves the chat rooms associated with a specific user.
+        /// Retrieves the chat rooms associated with a specific user, optionally filtered by project.
         /// </summary>
         /// <param name="userId">The ID of the user for whom to retrieve chat rooms.</param>
+        /// <param name="projectId">Optional. The ID of the project to filter chat rooms by.</param>
         /// <returns>The task result contains a collection of chat rooms.</returns>
-        Task<IEnumerable<ChatRoom>> GetUserChatRoomsAsync(int userId);
+        Task<IEnumerable<ChatRoom>> GetUserChatRoomsAsync(int userId, int? projectId = null);
+
         Task<bool> ValidateUserCanCreateChatRoomAsync(int userId, int projectGroupId);
 
         Task<ChatRoom> CreateChatRoomAsync(int projectGroupId, string name);

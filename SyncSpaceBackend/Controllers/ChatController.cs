@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SyncSpaceBackend.DTO;
 using SyncSpaceBackend.Interfaces;
 using SyncSpaceBackend.Models;
 using System.Security.Claims;
+using WebAPI.Context;
 
 namespace SyncSpaceBackend.Controllers
 {
@@ -14,22 +16,25 @@ namespace SyncSpaceBackend.Controllers
     [Authorize]
     public class ChatController : ControllerBase
     {
+        private readonly AppDbContext _context;
         private readonly IChatService _chatService;
         private readonly ILogger<ChatController> _logger;
         private readonly IMapper _mapper;
 
         public ChatController(
+            AppDbContext context,
             IChatService chatService,
             ILogger<ChatController> logger,
             IMapper mapper)
         {
+            _context = context;
             _chatService = chatService;
             _logger = logger;
             _mapper = mapper;
         }
 
         [HttpGet("rooms")]
-        public async Task<ActionResult<IEnumerable<ChatRoom>>> GetUserChatRooms()
+        public async Task<ActionResult<IEnumerable<ChatRoom>>> GetUserChatRooms([FromQuery] int? projectId = null)
         {
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var userId = Convert.ToInt32(userIdString);
@@ -40,7 +45,7 @@ namespace SyncSpaceBackend.Controllers
 
             try
             {
-                var rooms = await _chatService.GetUserChatRoomsAsync(userId);
+                var rooms = await _chatService.GetUserChatRoomsAsync(userId, projectId);
                 var roomDtos = _mapper.Map<IEnumerable<ChatRoomDto>>(rooms);
                 return Ok(roomDtos);
             }
@@ -79,6 +84,38 @@ namespace SyncSpaceBackend.Controllers
             {
                 _logger.LogError(ex, "Error retrieving chat history for project {ProjectGroupId}", projectGroupId);
                 return StatusCode(500, "An error occurred while retrieving chat history");
+            }
+        }
+
+        [HttpGet("projects")]
+        public async Task<ActionResult<IEnumerable<ProjectDropdownDto>>> GetUserProjects()
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = Convert.ToInt32(userIdString);
+
+            if (string.IsNullOrEmpty(userIdString))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                var projects = await _context.ProjectGroups
+                    .Where(p => p.ProjectMembers.Any(pm => pm.UserId == userId) && p.IsActive)
+                    .Select(p => new ProjectDropdownDto
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        IsActive = p.IsActive
+                    })
+                    .ToListAsync();
+
+                return Ok(projects);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving projects for user {UserId}", userId);
+                return StatusCode(500, "An error occurred while retrieving projects");
             }
         }
 
