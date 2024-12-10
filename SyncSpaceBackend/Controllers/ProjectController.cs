@@ -5,7 +5,6 @@ using SyncSpaceBackend.DTO;
 using SyncSpaceBackend.Models;
 using System.Security.Claims;
 using WebAPI.Context;
-using TaskStatus = SyncSpaceBackend.Enums.Enum.TaskStatus;
 using Microsoft.EntityFrameworkCore;
 using SyncSpaceBackend.Hubs;
 using Microsoft.AspNetCore.SignalR;
@@ -93,12 +92,12 @@ namespace SyncSpaceBackend.Controllers
                     TaskStats = new
                     {
                         Total = p.Tasks.Count,
-                        Completed = p.Tasks.Count(t => t.Status == TaskStatus.Completed),
-                        InProgress = p.Tasks.Count(t => t.Status == TaskStatus.InProgress),
-                        Overdue = p.Tasks.Count(t => t.DueDate < DateTime.UtcNow && t.Status != TaskStatus.Completed)
+                        Completed = p.Tasks.Count(t => t.Status == TaskStatusEnum.Completed),
+                        InProgress = p.Tasks.Count(t => t.Status == TaskStatusEnum.InProgress),
+                        Overdue = p.Tasks.Count(t => t.DueDate < DateTime.UtcNow && t.Status != TaskStatusEnum.Completed)
                     },
                     Progress = p.Tasks.Any()
-                        ? (double)p.Tasks.Count(t => t.Status == TaskStatus.Completed) / p.Tasks.Count * 100
+                        ? (double)p.Tasks.Count(t => t.Status == TaskStatusEnum.Completed) / p.Tasks.Count * 100
                         : 0,
                     p.Status,
                     IsActive = p.IsActive
@@ -180,7 +179,7 @@ namespace SyncSpaceBackend.Controllers
                     MessageCount = cr.Messages.Count
                 }),
                 Progress = project.Tasks.Any()
-                    ? (double)project.Tasks.Count(t => t.Status == TaskStatus.Completed) / project.Tasks.Count * 100
+                    ? (double)project.Tasks.Count(t => t.Status == TaskStatusEnum.Completed) / project.Tasks.Count * 100
                     : 0,
                 IsActive = project.IsActive
             };
@@ -303,46 +302,6 @@ namespace SyncSpaceBackend.Controllers
                 _logger.LogError(ex, $"Error updating project {id}");
                 return StatusCode(500, new { Message = "An error occurred while updating the project" });
             }
-        }
-
-        [HttpPost("{id}/tasks")]
-        public async Task<IActionResult> AddTask(int id, [FromBody] TaskCreateDto taskDto)
-        {
-            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var userId = Convert.ToInt32(userIdString);
-
-
-            var project = await _context.ProjectGroups
-                .Include(p => p.ProjectMembers)
-                .FirstOrDefaultAsync(p => p.Id == id);
-
-            if (project == null)
-                return NotFound(new { Message = "Project not found" });
-
-            // Check if user has rights to create task
-            var userMember = project.ProjectMembers
-                .FirstOrDefault(pm => pm.UserId == userId);
-
-            if (userMember == null)
-                return Forbid();
-
-            var task = new ProjectTask
-            {
-                ProjectId = id,
-                Title = taskDto.Title,
-                Description = taskDto.Description,
-                Status = TaskStatus.Todo,
-                Priority = taskDto.Priority,
-                DueDate = taskDto.DueDate,
-                CreatedAt = DateTime.UtcNow,
-                CreatedById = userId,
-                AssignedToId = taskDto.AssignedToId
-            };
-
-            _context.ProjectTasks.Add(task);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { Message = "Task created successfully", TaskId = task.Id });
         }
 
         [HttpPost("{id}/milestones")]
@@ -664,56 +623,6 @@ namespace SyncSpaceBackend.Controllers
             }
         }
 
-        [HttpPost("{projectId}/tasks/{taskId}/attachments")]
-        public async Task<IActionResult> AddTaskAttachment(int projectId, int taskId, IFormFile file)
-        {
-            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var userId = Convert.ToInt32(userIdString);
-
-            var task = await _context.ProjectTasks
-                .Include(t => t.Project)
-                    .ThenInclude(p => p.ProjectMembers)
-                .FirstOrDefaultAsync(t => t.Id == taskId && t.ProjectId == projectId);
-
-            if (task == null)
-                return NotFound(new { Message = "Task not found" });
-
-            // Check if user has access to the project
-            var userMember = task.Project.ProjectMembers
-                .FirstOrDefault(pm => pm.UserId == userId);
-
-            if (userMember == null)
-                return Forbid();
-
-            // Process file upload
-            var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "tasks");
-            Directory.CreateDirectory(uploadsFolder);
-
-            var fileName = $"{Guid.NewGuid()}_{file.FileName}";
-            var filePath = Path.Combine(uploadsFolder, fileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            var attachment = new TaskAttachment
-            {
-                TaskId = taskId,
-                FileName = file.FileName,
-                FilePath = fileName,
-                FileType = file.ContentType,
-                FileSize = file.Length,
-                UploadedAt = DateTime.UtcNow,
-                UploadedById = userId
-            };
-
-            _context.TaskAttachments.Add(attachment);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { Message = "Attachment uploaded successfully", AttachmentId = attachment.Id });
-        }
-
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProject(int id)
         {
@@ -793,10 +702,10 @@ namespace SyncSpaceBackend.Controllers
                     : query.OrderByDescending(p => p.CreatedAt),
                 "progress" => isAscending
                     ? query.OrderBy(p => p.Tasks.Any()
-                        ? (double)p.Tasks.Count(t => t.Status == TaskStatus.Completed) / p.Tasks.Count
+                        ? (double)p.Tasks.Count(t => t.Status == TaskStatusEnum.Completed) / p.Tasks.Count
                         : 0)
                     : query.OrderByDescending(p => p.Tasks.Any()
-                        ? (double)p.Tasks.Count(t => t.Status == TaskStatus.Completed) / p.Tasks.Count
+                        ? (double)p.Tasks.Count(t => t.Status == TaskStatusEnum.Completed) / p.Tasks.Count
                         : 0),
                 "tasks" => isAscending
                     ? query.OrderBy(p => p.Tasks.Count)

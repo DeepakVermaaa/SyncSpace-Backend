@@ -17,6 +17,7 @@ namespace SyncSpaceBackend.EntityConfiguration
                 .HasMaxLength(200);
 
             builder.Property(t => t.Description)
+                .IsRequired(false)
                 .HasMaxLength(1000);
 
             builder.Property(t => t.Status)

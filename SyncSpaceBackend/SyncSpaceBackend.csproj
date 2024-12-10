@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="uploads\tasks\" />
     <Folder Include="uploads\profiles\" />
   </ItemGroup>
 

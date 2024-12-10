@@ -7,12 +7,9 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
-using System;
 using Google.Apis.Auth;
 using SyncSpaceBackend.Models;
-using System.Collections.Generic;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 
 namespace SyncSpaceBackend.Controllers
 {
@@ -229,6 +226,62 @@ namespace SyncSpaceBackend.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { Message = "An error occurred while updating the profile", Error = ex.Message });
+            }
+        }
+
+        [HttpGet("search-project-assignees")]
+        [Authorize]
+        public async Task<IActionResult> SearchProjectAssignees([FromQuery] string searchTerm, [FromQuery] int projectId)
+        {
+            try
+            {
+                // Get current user's ID and organization
+                var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userId = Convert.ToInt32(userIdString);
+
+                var currentUser = await _authContext.Users
+                    .Include(u => u.Organizations)
+                    .FirstOrDefaultAsync(u => u.Id == userId);
+
+                if (currentUser == null || currentUser.Organizations == null)
+                    return BadRequest(new { Message = "User or organization not found" });
+
+                // Get project members since we only want to search within project members
+                var projectMemberIds = await _authContext.ProjectMembers
+                    .Where(pm => pm.ProjectId == projectId)
+                    .Select(pm => pm.UserId)
+                    .ToListAsync();
+
+                // Search for users who are project members
+                var users = await _authContext.Users
+                    .Where(u =>
+                        // Same organization
+                        u.OrganizationId == currentUser.OrganizationId &&
+                        // Must be a project member
+                        projectMemberIds.Contains(u.Id) &&
+                        // Match search term
+                        (u.FirstName.Contains(searchTerm) ||
+                         u.LastName.Contains(searchTerm) ||
+                         u.Email.Contains(searchTerm) ||
+                         (u.FirstName + " " + u.LastName).Contains(searchTerm))
+                    )
+                    .Take(10) // Limit results for performance
+                    .Select(u => new
+                    {
+                        u.Id,
+                        u.FirstName,
+                        u.LastName,
+                        u.Email,
+                        DisplayName = $"{u.FirstName} {u.LastName}",
+                        u.ProfilePicture
+                    })
+                    .ToListAsync();
+
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while searching users", Error = ex.Message });
             }
         }
 

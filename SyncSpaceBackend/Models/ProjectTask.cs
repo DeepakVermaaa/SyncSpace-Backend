@@ -1,6 +1,5 @@
 ﻿using WebAPI.Models;
 using static SyncSpaceBackend.Enums.Enum;
-using TaskStatus = SyncSpaceBackend.Enums.Enum.TaskStatus;
 
 namespace SyncSpaceBackend.Models
 {
@@ -9,9 +8,9 @@ namespace SyncSpaceBackend.Models
         public int Id { get; set; }
         public int ProjectId { get; set; }
         public string Title { get; set; }
-        public string Description { get; set; }
-        public TaskStatus Status { get; set; }
-        public TaskPriority Priority { get; set; }
+        public string? Description { get; set; }
+        public TaskStatusEnum Status { get; set; }
+        public TaskPriorityEnum Priority { get; set; }
         public DateTime DueDate { get; set; }
         public DateTime CreatedAt { get; set; }
         public int AssignedToId { get; set; }
