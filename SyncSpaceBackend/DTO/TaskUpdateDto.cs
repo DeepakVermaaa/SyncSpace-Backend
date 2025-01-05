@@ -10,6 +10,6 @@ namespace SyncSpaceBackend.DTO
         public TaskPriorityEnum Priority { get; set; }
         public DateTime DueDate { get; set; }
         public int AssignedToId { get; set; }
-        public List<string> Labels { get; set; }
+        //public List<string> Labels { get; set; }
     }
 }

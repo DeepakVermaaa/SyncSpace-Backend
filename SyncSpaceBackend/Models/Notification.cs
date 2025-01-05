@@ -1,4 +1,5 @@
 ﻿using WebAPI.Models;
+using static SyncSpaceBackend.Enums.Enum;
 
 public class Notification
 {

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SyncSpaceBackend.Models;
 using SyncSpaceBackend.EntityConfiguration;
 using System.Reflection.Emit;
+using WebAPI.EntityConfiguration;
 
 namespace WebAPI.Context
 {
@@ -22,7 +23,9 @@ namespace WebAPI.Context
         public DbSet<ProjectMilestone> ProjectMilestones { get; set; }
         public DbSet<ChatRoom> ChatRooms { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
-
+        public DbSet<Document> Documents { get; set; }
+        public DbSet<DocumentVersion> DocumentVersions { get; set; }
+        public DbSet<DocumentPermission> DocumentPermissions { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             // Apply configurations from assembly
@@ -48,6 +51,9 @@ namespace WebAPI.Context
             builder.ApplyConfiguration(new TaskAttachmentConfiguration());
             builder.ApplyConfiguration(new ProjectMilestoneConfiguration());
             builder.ApplyConfiguration(new OrganizationConfiguration());
+            builder.ApplyConfiguration(new DocumentConfiguration());
+            builder.ApplyConfiguration(new DocumentVersionConfiguration());
+            builder.ApplyConfiguration(new DocumentPermissionConfiguration());
         }
     }
 }

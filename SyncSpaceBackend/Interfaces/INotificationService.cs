@@ -1,4 +1,6 @@
-﻿namespace SyncSpaceBackend.Interfaces
+﻿using static SyncSpaceBackend.Enums.Enum;
+
+namespace SyncSpaceBackend.Interfaces
 {
     /// <summary>
     /// Defines notification service methods.

@@ -45,7 +45,9 @@ namespace SyncSpaceBackend.Controllers
                     .ThenInclude(pm => pm.User)
                 .Include(p => p.CreatedBy)
                 .Include(p => p.Tasks)
-                .Where(p => p.ProjectMembers.Any(pm => pm.UserId == userId) && p.IsActive);
+                .Include(p => p.Documents.Where(d => !d.IsDeleted))
+                .Where(p => p.ProjectMembers.Any(pm => pm.UserId == userId) && p.IsActive)
+                .AsSplitQuery();
 
             // Apply search filter
             if (!string.IsNullOrWhiteSpace(filterParams.SearchQuery))
@@ -70,7 +72,7 @@ namespace SyncSpaceBackend.Controllers
             // Get total count for pagination
             var totalCount = await query.CountAsync();
 
-            // Apply pagination
+            // Apply pagination and select fields
             var projects = await query
                 .Skip((filterParams.PageNumber - 1) * filterParams.PageSize)
                 .Take(filterParams.PageSize)
@@ -99,6 +101,27 @@ namespace SyncSpaceBackend.Controllers
                     Progress = p.Tasks.Any()
                         ? (double)p.Tasks.Count(t => t.Status == TaskStatusEnum.Completed) / p.Tasks.Count * 100
                         : 0,
+                    Documents = p.Documents.Where(d => !d.IsDeleted).Select(d => new
+                    {
+                        d.Id,
+                        d.Name,
+                        d.Description,
+                        d.FileExtension,
+                        d.FileSize,
+                        d.UploadedAt,
+                        UploadedBy = new
+                        {
+                            d.UploadedBy.FirstName,
+                            d.UploadedBy.LastName
+                        },
+                        LatestVersion = d.Versions.OrderByDescending(v => v.VersionNumber)
+                            .Select(v => v.VersionNumber)
+                            .FirstOrDefault(),
+                        CurrentUserPermission = d.Permissions
+                            .Where(p => p.UserId == userId)
+                            .Select(p => p.PermissionLevel)
+                            .FirstOrDefault()
+                    }),
                     p.Status,
                     IsActive = p.IsActive
                 })
@@ -113,6 +136,7 @@ namespace SyncSpaceBackend.Controllers
                 TotalPages = (int)Math.Ceiling(totalCount / (double)filterParams.PageSize)
             });
         }
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProject(int id)

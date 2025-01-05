@@ -26,6 +26,17 @@
             Delayed
         }
 
+        public enum NotificationType
+        {
+            TaskAssigned,
+            TaskUpdated,
+            ProjectDeadline,
+            Mention,
+            TeamUpdate,
+            ProjectUpdate,
+            System
+        }
+
         public enum ProjectRole
         {
             Admin,
@@ -41,6 +52,13 @@
             OnHold,
             Completed,
             Cancelled
+        }
+        public enum DocumentPermissionLevel
+        {
+            View = 0,
+            Download = 1,
+            Edit = 2,
+            Owner = 3
         }
     }
 }

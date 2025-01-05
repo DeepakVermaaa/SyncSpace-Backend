@@ -49,7 +49,7 @@ namespace SyncSpaceBackend.EntityConfiguration
             builder.HasIndex(pg => pg.Name);
             builder.HasIndex(pg => pg.CreatedAt);
             builder.HasIndex(pg => pg.Status);
-            builder.HasIndex(pg => pg.OrganizationId); // Add index for organization lookups
+            builder.HasIndex(pg => pg.OrganizationId);
 
             // Relationships
             builder.HasOne(pg => pg.Organizations)
@@ -61,6 +61,11 @@ namespace SyncSpaceBackend.EntityConfiguration
                 .WithMany()
                 .HasForeignKey(pg => pg.CreatedById)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasMany(pg => pg.Documents)
+           .WithOne(d => d.Project)
+           .HasForeignKey(d => d.ProjectGroupId)
+           .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(pg => pg.ProjectMembers)
                 .WithOne(pm => pm.Project)
@@ -90,7 +95,6 @@ namespace SyncSpaceBackend.EntityConfiguration
             // Global Query Filter
             builder.HasQueryFilter(pg => pg.IsActive);
 
-            // Add composite index for organization and name uniqueness
             builder.HasIndex(pg => new { pg.OrganizationId, pg.Name })
                 .IsUnique();
         }

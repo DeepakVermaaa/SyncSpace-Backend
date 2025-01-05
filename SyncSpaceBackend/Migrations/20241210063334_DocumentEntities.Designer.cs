@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebAPI.Context;
 
@@ -10,9 +11,11 @@ using WebAPI.Context;
 namespace SyncSpaceBackend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241210063334_DocumentEntities")]
+    partial class DocumentEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -441,7 +444,10 @@ namespace SyncSpaceBackend.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
-                    b.Property<int>("ProjectGroupId")
+                    b.Property<int?>("ProjectGroupId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProjectId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("UploadedAt")
@@ -455,6 +461,8 @@ namespace SyncSpaceBackend.Migrations
                     b.HasIndex("Name");
 
                     b.HasIndex("ProjectGroupId");
+
+                    b.HasIndex("ProjectId");
 
                     b.HasIndex("UploadedAt");
 
@@ -749,9 +757,13 @@ namespace SyncSpaceBackend.Migrations
 
             modelBuilder.Entity("WebAPI.Models.Document", b =>
                 {
-                    b.HasOne("SyncSpaceBackend.Models.ProjectGroup", "Project")
+                    b.HasOne("SyncSpaceBackend.Models.ProjectGroup", null)
                         .WithMany("Documents")
-                        .HasForeignKey("ProjectGroupId")
+                        .HasForeignKey("ProjectGroupId");
+
+                    b.HasOne("SyncSpaceBackend.Models.ProjectGroup", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

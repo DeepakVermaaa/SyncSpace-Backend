@@ -5,6 +5,7 @@ using SyncSpaceBackend.Hubs;
 using SyncSpaceBackend.Interfaces;
 using System.ComponentModel;
 using WebAPI.Context;
+using static SyncSpaceBackend.Enums.Enum;
 
 namespace SyncSpaceBackend.Services
 {

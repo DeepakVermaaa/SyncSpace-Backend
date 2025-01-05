@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using SyncSpaceBackend.Configurations;
+using SyncSpaceBackend.Helper;
 using SyncSpaceBackend.Hubs;
 using SyncSpaceBackend.Interfaces;
 using SyncSpaceBackend.Services;
@@ -23,7 +26,30 @@ builder.Services.AddControllers()
     });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Document Management API",
+        Version = "v1"
+    });
+
+    // Configure file upload operation
+    c.OperationFilter<FileUploadOperationFilter>();
+
+    // Handle different response types
+    c.UseAllOfToExtendReferenceSchemas();
+
+    // Configure response types mapping
+    c.MapType<FileStreamResult>(() => new OpenApiSchema { Type = "file" });
+
+    // Handle multipart/form-data
+    c.MapType<IFormFile>(() => new OpenApiSchema
+    {
+        Type = "string",
+        Format = "binary"
+    });
+});
 builder.Services.AddSignalR();
 builder.Services.AddAutoMapper(typeof(AutoMapperConfig));
 

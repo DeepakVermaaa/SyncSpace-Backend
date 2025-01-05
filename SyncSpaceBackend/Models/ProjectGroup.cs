@@ -23,6 +23,7 @@ namespace SyncSpaceBackend.Models
         public virtual ICollection<ChatRoom> ChatRooms { get; set; }
         public virtual ICollection<ChatMessage> ChatMessages { get; set; }
         public virtual ICollection<ProjectTask> Tasks { get; set; }
+        public virtual ICollection<Document> Documents { get; set; }
         public virtual Organizations Organizations { get; set; }
         public virtual ICollection<ProjectMilestone> Milestones { get; set; }
     }
