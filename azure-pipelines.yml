@@ -2,6 +2,7 @@ trigger:
   branches:
     include:
     - master
+
 variables:
 - name: solution
   value: '**/*.sln'
@@ -9,8 +10,9 @@ variables:
   value: 'Any CPU'
 - name: buildConfiguration
   value: 'Release'
+
 stages:
-- stage: __default
+- stage: Build
   jobs:
   - job: Job
     pool:
@@ -20,25 +22,29 @@ stages:
       inputs:
         version: '7.0.x'
         includePreviewVersions: false
+    
     - task: NuGetToolInstaller@1
+    
     - task: DotNetCoreCLI@2
       displayName: 'Restore'
       inputs:
         command: restore
         projects: '**/*.csproj'
+    
     - task: DotNetCoreCLI@2
       displayName: 'Build'
       inputs:
         command: build
         projects: '**/*.csproj'
         arguments: '--configuration $(buildConfiguration)'
+    
     - task: DotNetCoreCLI@2
       displayName: 'Test'
       inputs:
         command: test
         projects: '**/*Tests/*.csproj'
         arguments: '--configuration $(buildConfiguration)'
-         # Creating artifacts
+    
     - task: DotNetCoreCLI@2
       displayName: 'Publish'
       inputs:
@@ -46,8 +52,33 @@ stages:
         publishWebProjects: true
         arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
         zipAfterPublish: true
+    
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifacts'
       inputs:
         pathtoPublish: '$(Build.ArtifactStagingDirectory)'
         artifactName: 'drop'
+
+- stage: Deploy_Development
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: Deploy
+    pool:
+      name: 'Default'
+    environment: development
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@1
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'drop'
+              downloadPath: '$(System.ArtifactsDirectory)'
+          
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: '$(System.ArtifactsDirectory)/drop'
+              TargetFolder: 'C:\Deploy\MyApp'
