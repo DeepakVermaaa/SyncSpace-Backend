@@ -4,12 +4,18 @@ trigger:
     - master
 
 variables:
-- name: solution
-  value: '**/*.sln'
-- name: buildPlatform
-  value: 'Any CPU'
-- name: buildConfiguration
-  value: 'Release'
+  - name: solution
+    value: '**/*.sln'
+  - name: buildPlatform
+    value: 'Any CPU'
+  - name: buildConfiguration
+    value: 'Release'
+  - name: major
+    value: '1'
+  - name: minor
+    value: '0'
+  - name: buildVersion
+    value: '$(major).$(minor).$(Build.BuildId)'
 
 stages:
 - stage: Build
@@ -18,6 +24,10 @@ stages:
     pool:
       name: 'Default'
     steps:
+    # Set the build number
+    - powershell: |
+        Write-Host "##vso[build.updatebuildnumber]$(buildVersion)"
+      displayName: 'Set Build Number'
     - task: UseDotNet@2
       inputs:
         version: '7.0.x'
@@ -53,11 +63,16 @@ stages:
         arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
         zipAfterPublish: true
     
+    # Add version info to artifacts
+    - powershell: |
+        Set-Content -Path "$(Build.ArtifactStagingDirectory)/version.txt" -Value "$(buildVersion)"
+      displayName: 'Save Version Info'
+
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifacts'
       inputs:
         pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-        artifactName: 'drop'
+        artifactName: 'drop_$(buildVersion)'
 
 - stage: Deploy_Development
   dependsOn: Build
