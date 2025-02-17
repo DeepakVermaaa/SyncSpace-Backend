@@ -95,5 +95,5 @@ stages:
           
           - task: CopyFiles@2
             inputs:
-              SourceFolder: '$(System.ArtifactsDirectory)/drop'
+              SourceFolder: '$(System.ArtifactsDirectory)/drop_$(buildVersion)'
               TargetFolder: 'C:\Deploy\MyApp'
